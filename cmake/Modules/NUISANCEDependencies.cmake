@@ -13,18 +13,22 @@ endif()
 add_library(GeneratorCompileDependencies INTERFACE)
 add_library(GeneratorLinkDependencies INTERFACE)
 
+if(DEFINED ROOT_VERSION_MAJOR)
+  target_compile_definitions(GeneratorCompileDependencies INTERFACE ROOT_VERSION_MAJOR=${ROOT_VERSION_MAJOR})
+endif()
+
 set(GiBUU_ENABLED TRUE)
 target_compile_definitions(GeneratorCompileDependencies INTERFACE GiBUU_ENABLED)
 
-DefineEnabledRequiredSwitch(T2KReWeight)
-DefineEnabledRequiredSwitch(NIWGLegacy)
-DefineEnabledRequiredSwitch(NOvARwgt)
-DefineEnabledRequiredSwitch(nusystematics)
-DefineEnabledRequiredSwitch(NEUT)
-DefineEnabledRequiredSwitch(GENIE)
-DefineEnabledRequiredSwitch(NuWro)
-DefineEnabledRequiredSwitch(Prob3plusplus)
-DefineEnabledRequiredSwitch(HepMC3)
+DefineEnabledRequiredSwitch(T2KReWeight TRUE)
+DefineEnabledRequiredSwitch(NIWGLegacy TRUE)
+DefineEnabledRequiredSwitch(NOvARwgt TRUE)
+DefineEnabledRequiredSwitch(nusystematics TRUE)
+DefineEnabledRequiredSwitch(NEUT TRUE)
+DefineEnabledRequiredSwitch(GENIE TRUE)
+DefineEnabledRequiredSwitch(NuWro TRUE)
+DefineEnabledRequiredSwitch(Prob3plusplus FALSE)
+DefineEnabledRequiredSwitch(HepMC3 FALSE)
 
 if (T2KReWeight_ENABLED)
   include(T2KReWeight)
@@ -213,9 +217,9 @@ endif()
 if (HepMC3_ENABLED)
   CPMAddPackage(
       NAME HepMC3
-      VERSION 3.2.5
+      VERSION 3.2.6
       GIT_REPOSITORY "https://gitlab.cern.ch/hepmc/HepMC3.git"
-      GIT_TAG 3.2.5
+      GIT_TAG 3.2.6
       OPTIONS
         "HEPMC3_CXX_STANDARD ${CMAKE_CXX_STANDARD}"
         "HEPMC3_ENABLE_SEARCH OFF"
