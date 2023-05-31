@@ -654,6 +654,9 @@ protected:
   Double_t* fDataErrors;  ///< REMOVE data bin errors
   Int_t fNDataPointsX;    ///< REMOVE number of data points
 
+  // Cov scale
+  double fCovScaleFactor;
+
 };
 
 /*! @} */

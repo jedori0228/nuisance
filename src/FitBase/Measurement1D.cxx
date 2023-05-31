@@ -80,6 +80,10 @@ Measurement1D::Measurement1D(void) {
   // Extra Histograms
   fMCHist_Modes = NULL;
   fMCFine_Modes = NULL;
+
+  // Cov scale factor
+  fCovScaleFactor = 1E-38;
+
 }
 
 //********************************************************************
@@ -586,7 +590,7 @@ void Measurement1D::FinaliseMeasurement() {
 
   // Push the diagonals of fFullCovar onto the data histogram
   // Comment this out until the covariance/data scaling is consistent!
-  StatUtils::SetDataErrorFromCov(fDataHist, fFullCovar, 1E-38);
+  StatUtils::SetDataErrorFromCov(fDataHist, fFullCovar, fCovScaleFactor);
 
   // If shape only, set covar and fDecomp using the shape-only matrix (if set)
   if (fIsShape && fShapeCovar && FitPar::Config().GetParB("UseShapeCovar")) {
@@ -1528,7 +1532,7 @@ void Measurement1D::WriteShapePlot() {
   if (!fShapeCovar) SetShapeCovar();
 
   // Don't check error
-  if (fShapeCovar) StatUtils::SetDataErrorFromCov(dataShape, fShapeCovar, 1E-38, false);
+  if (fShapeCovar) StatUtils::SetDataErrorFromCov(dataShape, fShapeCovar, fCovScaleFactor, false);
 
   double shapeScale = 1.0;
   if (fIsRawEvents) {
