@@ -45,7 +45,8 @@ void nusystematicsWeightEngine::Config() {
 
   std::string fhicl_name = DuneRwtParam.front().GetS("ConfigFHiCL");
 
-  DUNErwt.LoadConfiguration(fhicl_name);
+  DUNErwt = &DUNErwtSingleton::getInstance(fhicl_name);
+
 }
 
 systtools::paramId_t const kNuSystCVResponse = 999;
@@ -54,13 +55,13 @@ int nusystematicsWeightEngine::ConvDial(std::string name) {
   if (name == "NuSystCVResponse") {
     return kNuSystCVResponse;
   }
-  if (!DUNErwt.HaveHeader(name)) {
+  if (!DUNErwt->HaveHeader(name)) {
     NUIS_ABORT("nusystematicsWeightEngine passed dial: "
                << name << " that it does not understand.");
   }
   NUIS_LOG(FIT, "Added NuSyst param, "
-                    << name << " with ID: " << DUNErwt.GetHeaderId(name));
-  return DUNErwt.GetHeaderId(name);
+                    << name << " with ID: " << DUNErwt->GetHeaderId(name));
+  return DUNErwt->GetHeaderId(name);
 }
 
 void nusystematicsWeightEngine::IncludeDial(std::string name, double startval) {
@@ -163,7 +164,7 @@ double nusystematicsWeightEngine::CalcWeight(BaseFitEvt *evt) {
     if (!cached_responses) {
       evt->input_handler->nusystematics_CacheResponse(
           evt->input_handler_itree_ent,
-          DUNErwt.GetEventVariationAndCVResponse(*evt->genie_event->event));
+          DUNErwt->GetEventVariationAndCVResponse(*evt->genie_event->event));
     }
     responses = evt->input_handler->nusystematics_GetCachedResponse(
         evt->input_handler_itree_ent);
@@ -171,7 +172,7 @@ double nusystematicsWeightEngine::CalcWeight(BaseFitEvt *evt) {
 
   double weight = 1;
   for (auto const &resp : *responses) {
-    if (!DUNErwt.IsWeightResponse(resp.pid)) {
+    if (!DUNErwt->IsWeightResponse(resp.pid)) {
       continue;
     }
     if (fUseCV) {
@@ -185,7 +186,7 @@ double nusystematicsWeightEngine::CalcWeight(BaseFitEvt *evt) {
       if (index != systtools::kParamUnhandled<size_t>) {
         weight *=
             (resp.CV_response *
-             DUNErwt.GetParameterResponse(
+             DUNErwt->GetParameterResponse(
                  resp.pid, EnabledParams[index].val,
                  systtools::event_unit_response_t{{resp.pid, resp.responses}}));
       }

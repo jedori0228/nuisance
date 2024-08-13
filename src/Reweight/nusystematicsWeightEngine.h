@@ -27,12 +27,34 @@
 
 #include <cmath>
 
+
+class DUNErwtSingleton {
+public:
+    static nusyst::response_helper& getInstance(const std::string& fhicl_name) {
+        static DUNErwtSingleton instance(fhicl_name);  // Pass parameter to constructor
+        return instance.DUNErwt;
+    }
+
+private:
+    DUNErwtSingleton(const std::string& fhicl_name) {
+        // Private constructor to prevent instantiation
+        DUNErwt.LoadConfiguration(fhicl_name);  // Configure DUNErwt once
+    }
+
+    ~DUNErwtSingleton() = default;
+
+    DUNErwtSingleton(const DUNErwtSingleton&) = delete;
+    DUNErwtSingleton& operator=(const DUNErwtSingleton&) = delete;
+
+    nusyst::response_helper DUNErwt;
+};
+
 class nusystematicsWeightEngine : public WeightEngineBase {
 
  public:
   nusystematicsWeightEngine();
 
-  nusyst::response_helper DUNErwt;
+  nusyst::response_helper* DUNErwt;
 
   systtools::param_value_list_t EnabledParams;
 
