@@ -181,7 +181,7 @@ double nusystematicsWeightEngine::CalcWeight(BaseFitEvt *evt) {
              // spline every time.
 
       // if a given dial is a Correction, just use the CVCorrection
-      if( DUNErwt.GetHeader(resp.pid).isCorrection ){
+      if( DUNErwt->GetHeader(resp.pid).isCorrection ){
         weight *= resp.CV_response;
       }
       else{
@@ -191,7 +191,7 @@ double nusystematicsWeightEngine::CalcWeight(BaseFitEvt *evt) {
         if (index != systtools::kParamUnhandled<size_t>) {
           weight *=
               (resp.CV_response *
-               DUNErwt.GetParameterResponse(
+               DUNErwt->GetParameterResponse(
                    resp.pid, EnabledParams[index].val,
                    systtools::event_unit_response_t{{resp.pid, resp.responses}}));
         }
