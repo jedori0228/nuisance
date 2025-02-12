@@ -96,6 +96,13 @@ GenericFlux_Tester::GenericFlux_Tester(std::string name, std::string inputfile,
   // Setup our TTrees
   this->AddEventVariablesToTree();
   this->AddSignalFlagsToTree();
+
+  FillICARUS1muNp0piVariable = Config::Get().GetParB("AddICARUSVar");
+  if( FillICARUS1muNp0piVariable ){
+    NUIS_LOG(SAM, " Generic Flux Adding ICARUS variables");
+    this->AddICARUS1muNp0piVariablesToTree();
+  }
+
 }
 
 void GenericFlux_Tester::AddEventVariablesToTree() {
@@ -235,6 +242,106 @@ void GenericFlux_Tester::AddSignalFlagsToTree() {
   eventVariables->Branch("flagCC1pi0", &flagCC1pi0, "flagCC1pi0/O");
   eventVariables->Branch("flagNC1pi0", &flagNC1pi0, "flagNC1pi0/O");
 };
+
+void GenericFlux_Tester::AddICARUS1muNp0piVariablesToTree() {
+  if (!eventVariables) {
+    Config::Get().out->cd();
+    eventVariables = new TTree((this->fName + "_VARS").c_str(),
+                               (this->fName + "_VARS").c_str());
+  }
+
+  NUIS_LOG(SAM, "Adding ICARUS 1muNp0pi variables");
+
+  eventVariables->Branch("ICARUS_1muNp0pi_IsSignal", &ICARUS_1muNp0pi_IsSignal, "ICARUS_1muNp0pi_IsSignal/O");
+  eventVariables->Branch("ICARUS_1muNp0pi_deltaPT", &ICARUS_1muNp0pi_deltaPT, "ICARUS_1muNp0pi_deltaPT/F");
+  eventVariables->Branch("ICARUS_1muNp0pi_deltaalphaT", &ICARUS_1muNp0pi_deltaalphaT, "ICARUS_1muNp0pi_deltaalphaT/F");
+
+}
+
+void GenericFlux_Tester::FillICARUS1muNp0piVariablesToTree(FitEvent *event) {
+
+  unsigned int nMu_1muNp0pi(0), nP_1muNp0pi(0), nPi_1muNp0pi(0);
+  unsigned int nPhoton_1muNp0pi(0), nMesons_1muNp0pi(0), nBaryonsAndPi0_1muNp0pi(0);
+  double maxMomentumP_1muNp0pi = -999.;
+  bool passProtonPCut_1muNp0pi = false;
+
+  std::vector<FitParticle *> protons;
+
+  // Start Particle Loop
+  UInt_t npart = event->Npart();
+  for (UInt_t i = 0; i < npart; i++) {
+    // Skip particles that weren't in the final state
+    bool part_alive = event->PartInfo(i)->fIsAlive and
+                      event->PartInfo(i)->Status() == kFinalState;
+    if (!part_alive)
+      continue;
+
+    // PDG Particle
+    int pdgc = event->PartInfo(i)->fPID;
+    TLorentzVector part_4mom = event->PartInfo(i)->fP;
+
+    // ICARUS 1muNp0pi
+
+    // All FS protons for generic purpose
+    if(pdgc==2212){
+      protons.push_back(event->PartInfo(i));
+    }  
+
+    double momentum = part_4mom.Vect().Mag()/1000.;
+
+    bool PassMuonPCut = (momentum > 0.226);
+    if ( abs(pdgc) == 13 ) {
+      if (PassMuonPCut) nMu_1muNp0pi+=1;
+    }
+
+    if ( abs(pdgc) == 2212 ) {
+      nP_1muNp0pi+=1;
+      if ( momentum > maxMomentumP_1muNp0pi ) {
+        maxMomentumP_1muNp0pi = momentum;
+        passProtonPCut_1muNp0pi = (momentum > 0.4 && momentum < 1.);
+      }
+    }
+
+    if ( abs(pdgc) == 111 || abs(pdgc) == 211 ) nPi_1muNp0pi+=1;
+    // CHECK A SIMILAR DEFINITION AS MINERVA FOR EXTRA REJECTION OF UNWANTED THINGS IN SIGNAL DEFN.
+    if ( abs(pdgc) == 22 && part_4mom.E()/1000. > 0.01 ) nPhoton_1muNp0pi+=1;
+    else if ( abs(pdgc) == 211 || abs(pdgc) == 321 || abs(pdgc) == 323 ||
+              pdgc == 111 || pdgc == 130 || pdgc == 310 || pdgc == 311 ||
+              pdgc == 313 || abs(pdgc) == 221 || abs(pdgc) == 331 ) nMesons_1muNp0pi+=1;
+    else if ( pdgc == 3112 || pdgc == 3122 || pdgc == 3212 || pdgc == 3222 ||
+              pdgc == 4112 || pdgc == 4122 || pdgc == 4212 || pdgc == 4222 ||
+              pdgc == 411 || pdgc == 421 || pdgc == 111 ) nBaryonsAndPi0_1muNp0pi+=1;
+
+
+  }
+
+  ICARUS_1muNp0pi_IsSignal = nMu_1muNp0pi==1 &&
+                             nP_1muNp0pi>0 && passProtonPCut_1muNp0pi &&
+                             nPi_1muNp0pi==0 &&
+                             nPhoton_1muNp0pi==0 &&
+                             nMesons_1muNp0pi==0 &&
+                             nBaryonsAndPi0_1muNp0pi==0;
+
+  bool IsAntiNu = event->GetNeutrinoIn()->fPID<0;
+
+  TLorentzVector Pmu = event->GetHMFSParticle(IsAntiNu ? -13 : +13)->fP;
+  TLorentzVector Pnu = event->GetNeutrinoIn()->fP;
+
+  ICARUS_1muNp0pi_deltaPT = -999.;
+  ICARUS_1muNp0pi_deltaalphaT = -999.;
+  if(protons.size()>0){
+
+    // - Sort protons in descending order of KE
+    std::sort(protons.begin(), protons.end(),
+              [](FitParticle* a, FitParticle* b) {
+                  return a->KE() > b->KE();
+              });
+
+    ICARUS_1muNp0pi_deltaPT = FitUtils::CalcTKI_deltaPT(Pmu.Vect(), protons[0]->fP.Vect(), Pnu.Vect())/1000.;
+    ICARUS_1muNp0pi_deltaalphaT = FitUtils::CalcTKI_deltaalphaT(Pmu.Vect(), protons[0]->fP.Vect(), Pnu.Vect());
+  }
+
+}
 
 //********************************************************************
 void GenericFlux_Tester::ResetVariables() {
@@ -501,6 +608,10 @@ void GenericFlux_Tester::FillEventVariables(FitEvent *event) {
 
   if (Nprotons > 0 && Nneutrons > 0)
     CosPprotPneut = cos(pprot->Vect().Angle(pneut->Vect()));
+
+  if(FillICARUS1muNp0piVariable){
+    FillICARUS1muNp0piVariablesToTree(event);
+  }
 
   // Event Weights ----
   // ------------------

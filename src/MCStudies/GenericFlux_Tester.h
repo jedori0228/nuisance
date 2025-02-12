@@ -67,6 +67,9 @@ public:
   void AddEventVariablesToTree();
   void AddSignalFlagsToTree();
 
+  void AddICARUS1muNp0piVariablesToTree();
+  void FillICARUS1muNp0piVariablesToTree(FitEvent *event);
+
  private:
 
   // Lighter flat trees that don't include vectors
@@ -200,6 +203,12 @@ public:
   bool flagNC1pim;
   bool flagCC1pi0;
   bool flagNC1pi0;
+
+  // ICARUS 1muNp0pi variables
+  bool FillICARUS1muNp0piVariable;
+  bool ICARUS_1muNp0pi_IsSignal;
+  float ICARUS_1muNp0pi_deltaPT;
+  float ICARUS_1muNp0pi_deltaalphaT;
 
 };
 
