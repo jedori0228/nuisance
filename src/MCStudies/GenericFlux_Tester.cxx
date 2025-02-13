@@ -324,6 +324,9 @@ void GenericFlux_Tester::FillICARUS1muNp0piVariablesToTree(FitEvent *event) {
 
   bool IsAntiNu = event->GetNeutrinoIn()->fPID<0;
 
+  if(! event->GetHMFSParticle(IsAntiNu ? -13 : +13) ) return;
+  if(! event->GetNeutrinoIn() ) return;
+
   TLorentzVector Pmu = event->GetHMFSParticle(IsAntiNu ? -13 : +13)->fP;
   TLorentzVector Pnu = event->GetNeutrinoIn()->fP;
 
