@@ -209,6 +209,8 @@ public:
   bool ICARUS_1muNp0pi_IsSignal;
   float ICARUS_1muNp0pi_deltaPT;
   float ICARUS_1muNp0pi_deltaalphaT;
+  float ICARUS_1muNp0pi_MuonCos;
+  float ICARUS_1muNp0pi_MuonProtonCos;
 
 };
 
