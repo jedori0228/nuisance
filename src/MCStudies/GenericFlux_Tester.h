@@ -69,6 +69,8 @@ public:
 
   void AddICARUS1muNp0piVariablesToTree();
   void FillICARUS1muNp0piVariablesToTree(FitEvent *event);
+  void AddICARUS1mu2p0piVariablesToTree();
+  void FillICARUS1mu2p0piVariablesToTree(FitEvent *event);
 
  private:
 
@@ -211,6 +213,14 @@ public:
   float ICARUS_1muNp0pi_deltaalphaT;
   float ICARUS_1muNp0pi_MuonCos;
   float ICARUS_1muNp0pi_MuonProtonCos;
+
+  bool ICARUS_1mu2p0pi_IsSignal;
+  float ICARUS_1mu2p0pi_HadronicOpeningAngle;
+  float ICARUS_1mu2p0pi_MuonHadronAngle;
+  float ICARUS_1mu2p0pi_DeltaPT;
+  float ICARUS_1mu2p0pi_DeltaAlphaT;
+  float ICARUS_1mu2p0pi_DeltaPhiT;
+  float ICARUS_1mu2p0pi_DeltaPTT;
 
 };
 

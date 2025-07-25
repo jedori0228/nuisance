@@ -101,6 +101,7 @@ GenericFlux_Tester::GenericFlux_Tester(std::string name, std::string inputfile,
   if( FillICARUS1muNp0piVariable ){
     NUIS_LOG(SAM, " Generic Flux Adding ICARUS variables");
     this->AddICARUS1muNp0piVariablesToTree();
+    this->AddICARUS1mu2p0piVariablesToTree();
   }
 
 }
@@ -243,6 +244,9 @@ void GenericFlux_Tester::AddSignalFlagsToTree() {
   eventVariables->Branch("flagNC1pi0", &flagNC1pi0, "flagNC1pi0/O");
 };
 
+//-------------------------------------------
+// ICARUS, 1muNp0pi
+
 void GenericFlux_Tester::AddICARUS1muNp0piVariablesToTree() {
   if (!eventVariables) {
     Config::Get().out->cd();
@@ -354,6 +358,115 @@ void GenericFlux_Tester::FillICARUS1muNp0piVariablesToTree(FitEvent *event) {
   }
 
 }
+//-------------------------------------------
+
+//-------------------------------------------
+// ICARUS, 1mu2p0pi
+
+void GenericFlux_Tester::AddICARUS1mu2p0piVariablesToTree() {
+  if (!eventVariables) {
+    Config::Get().out->cd();
+    eventVariables = new TTree((this->fName + "_VARS").c_str(),
+                               (this->fName + "_VARS").c_str());
+  }
+  NUIS_LOG(SAM, "Adding ICARUS 1mu2p0pi variables");
+  eventVariables->Branch("ICARUS_1mu2p0pi_IsSignal", &ICARUS_1mu2p0pi_IsSignal, "ICARUS_1mu2p0pi_IsSignal/O");
+  // - Lab-frame opening angles
+  eventVariables->Branch("ICARUS_1mu2p0pi_HadronicOpeningAngle", &ICARUS_1mu2p0pi_HadronicOpeningAngle, "ICARUS_1mu2p0pi_HadronicOpeningAngle/F");
+  eventVariables->Branch("ICARUS_1mu2p0pi_MuonHadronAngle", &ICARUS_1mu2p0pi_MuonHadronAngle, "ICARUS_1mu2p0pi_MuonHadronAngle/F");
+  // - Single-transverse kinematic imbalance
+  eventVariables->Branch("ICARUS_1mu2p0pi_DeltaPT", &ICARUS_1mu2p0pi_DeltaPT, "ICARUS_1mu2p0pi_DeltaPT/F");
+  eventVariables->Branch("ICARUS_1mu2p0pi_DeltaAlphaT", &ICARUS_1mu2p0pi_DeltaAlphaT, "ICARUS_1mu2p0pi_DeltaAlphaT/F");
+  eventVariables->Branch("ICARUS_1mu2p0pi_DeltaPhiT", &ICARUS_1mu2p0pi_DeltaPhiT, "ICARUS_1mu2p0pi_DeltaPhiT/F");
+  // - Double-transverse kinematic imbalance
+  eventVariables->Branch("ICARUS_1mu2p0pi_DeltaPTT", &ICARUS_1mu2p0pi_DeltaPTT, "ICARUS_1mu2p0pi_DeltaPTT/F");
+}
+void GenericFlux_Tester::FillICARUS1mu2p0piVariablesToTree(FitEvent *event) {
+  unsigned int nMu_1mu2p0pi(0), nP_1mu2p0pi(0), nPi_1mu2p0pi(0);
+  unsigned int nPhoton_1mu2p0pi(0), nMesons_1mu2p0pi(0), nBaryonsAndPi0_1mu2p0pi(0);
+  double maxMomentumP_1mu2p0pi = -999.;
+  bool passProtonMaxPCut_1mu2p0pi = false;
+  std::vector<FitParticle *> protons;
+  // Start Particle Loop
+  UInt_t npart = event->Npart();
+  for (UInt_t i = 0; i < npart; i++) {
+    // Skip particles that weren't in the final state
+    bool part_alive = event->PartInfo(i)->fIsAlive and
+                      event->PartInfo(i)->Status() == kFinalState;
+    if (!part_alive)
+      continue;
+    // PDG Particle
+    int pdgc = event->PartInfo(i)->fPID;
+    TLorentzVector part_4mom = event->PartInfo(i)->fP;
+    // ICARUS 1mu2p0pi
+    double momentum = part_4mom.Vect().Mag()/1000.;
+    bool PassMuonPCut = (momentum > 0.226);
+    if ( abs(pdgc) == 13 ) {
+      if (PassMuonPCut) nMu_1mu2p0pi+=1;
+    }
+    if ( abs(pdgc) == 2212 && momentum > 0.35) {
+      nP_1mu2p0pi+=1;
+      protons.push_back(event->PartInfo(i));
+      if ( momentum > maxMomentumP_1mu2p0pi ) {
+        maxMomentumP_1mu2p0pi = momentum;
+        passProtonMaxPCut_1mu2p0pi = (momentum < 2.);
+      }
+    }
+    if ( abs(pdgc) == 111 || abs(pdgc) == 211 ) nPi_1mu2p0pi+=1;
+    else if ( abs(pdgc) == 211 || abs(pdgc) == 321 || abs(pdgc) == 323 ||
+              pdgc == 111 || pdgc == 130 || pdgc == 310 || pdgc == 311 ||
+              pdgc == 313 || abs(pdgc) == 221 || abs(pdgc) == 331 ) nMesons_1mu2p0pi+=1;
+    else if ( pdgc == 3112 || pdgc == 3122 || pdgc == 3212 || pdgc == 3222 ||
+              pdgc == 4112 || pdgc == 4122 || pdgc == 4212 || pdgc == 4222 ||
+              pdgc == 411 || pdgc == 421 || pdgc == 111 ) nBaryonsAndPi0_1mu2p0pi+=1;
+  }
+  ICARUS_1mu2p0pi_IsSignal = nMu_1mu2p0pi==1 &&
+                             nP_1mu2p0pi>1 && passProtonMaxPCut_1mu2p0pi &&
+                             nPi_1mu2p0pi==0 &&
+                             nMesons_1mu2p0pi==0 &&
+                             nBaryonsAndPi0_1mu2p0pi==0;
+  bool IsAntiNu = event->GetNeutrinoIn()->fPID<0;
+  if(! event->GetHMFSParticle(IsAntiNu ? -13 : +13) ) return;
+  if(! event->GetNeutrinoIn() ) return;
+  TLorentzVector Pmu = event->GetHMFSParticle(IsAntiNu ? -13 : +13)->fP;
+  TLorentzVector Pnu = event->GetNeutrinoIn()->fP;
+  ICARUS_1mu2p0pi_DeltaPT = -999.;
+  ICARUS_1mu2p0pi_DeltaPTT = -999.;
+  ICARUS_1mu2p0pi_DeltaPhiT = -999.;
+  ICARUS_1mu2p0pi_DeltaAlphaT = -999.;
+  ICARUS_1mu2p0pi_HadronicOpeningAngle = -999.;
+  ICARUS_1mu2p0pi_MuonHadronAngle = -999.;
+  if(protons.size()>1){
+    // - Sort protons in descending order of KE
+    std::sort(protons.begin(), protons.end(),
+              [](FitParticle* a, FitParticle* b) {
+                  return a->KE() > b->KE();
+              });
+    // - Calculate lab-frame opening angles
+    TVector3 dirNu = Pnu.Vect().Unit();
+    TVector3 pMu = Pmu.Vect();
+    TVector3 pP1 = protons[0]->fP.Vect();
+    TVector3 pP2 = protons[1]->fP.Vect();
+    TVector3 pHad = pP1 + pP2;
+    ICARUS_1mu2p0pi_HadronicOpeningAngle = pP1.Dot(pP2) / (pP1.Mag() * pP2.Mag());
+    ICARUS_1mu2p0pi_MuonHadronAngle = pHad.Dot(pMu) / (pMu.Mag() * pHad.Mag());
+    // - Calculate single-transeverse quantities
+    TVector3 pTMu = pMu - (pMu.Dot(dirNu) * dirNu);
+    TVector3 pTHad = pHad - (pHad.Dot(dirNu) * dirNu);
+    TVector3 dpT = pTMu + pTHad;
+    ICARUS_1mu2p0pi_DeltaPT = dpT.Mag()/1000.;
+    ICARUS_1mu2p0pi_DeltaAlphaT = TMath::ACos( -1. * (pTMu.Dot(dpT)) / (pTMu.Mag() * dpT.Mag()) );
+    ICARUS_1mu2p0pi_DeltaPhiT = TMath::ACos( -1. * (pTMu.Dot(pTHad)) / (pTMu.Mag() * pTHad.Mag()) );
+    // - Calculate double-transeverse quantities
+    TVector3 dirTT = ( dirNu.Cross(pMu) ).Unit();
+    double pTTP1 = pP1.Dot(dirTT);
+    double pTTP2 = pP2.Dot(dirTT);
+    ICARUS_1mu2p0pi_DeltaPTT = (pTTP1 + pTTP2)/1000.;
+  }
+}
+
+//-------------------------------------------
+
 
 //********************************************************************
 void GenericFlux_Tester::ResetVariables() {
@@ -623,6 +736,7 @@ void GenericFlux_Tester::FillEventVariables(FitEvent *event) {
 
   if(FillICARUS1muNp0piVariable){
     FillICARUS1muNp0piVariablesToTree(event);
+    FillICARUS1mu2p0piVariablesToTree(event);
   }
 
   // Event Weights ----
