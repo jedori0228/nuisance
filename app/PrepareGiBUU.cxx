@@ -139,13 +139,24 @@ void CreateRateHistogram(std::string inputList, std::string flux,
   NUIS_LOG(FIT, "Processed all events");
   
   // Somewhat annoyingly, have to include the flux width!
+/*
+  // Jaesung Kim, 06/25/2025
   double flux_range = (xsecHist->GetXaxis()->GetBinUpEdge(xsecHist->GetNbinsX()+1) - \
 		       xsecHist->GetXaxis()->GetBinLowEdge(1));
   xsecHist->Scale(flux_range, "width");
+*/
+  // Jaesung Kim, 06/25/2025
+  xsecHist->Scale(1., "width");
 
   // This will be the evtrt histogram
   TH1D *evtHist = (TH1D*)xsecHist->Clone();
+/*
+  // Jaesung Kim, 06/25/2025
   evtHist->Multiply(fluxHist);
+*/
+  // Jaesung Kim, 06/25/2025
+  double this_flux_integral = fluxHist->Integral("width");
+  evtHist->Scale(this_flux_integral);
 
   // Check whether the overflow is empty. If not, advise that either the wrong
   // flux histogram or units were used...
