@@ -7,7 +7,7 @@
 #include "SplineWeightEngine.h"
 
 #ifdef NEUTReWeight_ENABLED
-#include "NEUTWeightEngine.h"
+//#include "NEUTWeightEngine.h"
 #endif
 
 #ifdef NIWGLegacy_ENABLED
@@ -38,9 +38,11 @@ void FitWeight::AddRWEngine(int type) {
   NUIS_LOG(FIT, "Adding reweight engine " << type);
   switch (type) {
 #ifdef NEUTReWeight_ENABLED    
+/*
     case kNEUT:
       fAllRW[type] = new NEUTWeightEngine("neutrw");
       break;
+*/
 #endif
 
 #ifdef GENIEReWeight_ENABLED
@@ -114,7 +116,7 @@ WeightEngineBase *FitWeight::GetRWEngine(int type) {
 bool FitWeight::HasRWEngine(int type) {
   switch (type) {
 #ifdef NEUTReWeight_ENABLED
-    case kNEUT:
+    //case kNEUT:
 #endif
 #ifdef GENIEReWeight_ENABLED
     case kGENIE:
