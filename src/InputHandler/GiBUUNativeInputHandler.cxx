@@ -367,7 +367,7 @@ void GiBUUNativeInputHandler::CalcNUISANCEKinematics() {
     // Note that hydrogen is an exception because of how the timesteps work
    
     if(dist<6) {
-      std::cout<<"Dropping Particle in Nucleus"<<std::endl;
+      //std::cout<<"Dropping Particle in Nucleus"<<std::endl;
 	    continue;
     }
 
