@@ -97,11 +97,16 @@ GenericFlux_Tester::GenericFlux_Tester(std::string name, std::string inputfile,
   this->AddEventVariablesToTree();
   this->AddSignalFlagsToTree();
 
-  FillICARUS1muNp0piVariable = Config::Get().GetParB("AddICARUSVar");
-  if( FillICARUS1muNp0piVariable ){
-    NUIS_LOG(SAM, " Generic Flux Adding ICARUS variables");
+  Fill_ICARUS_QELike_Variable = Config::Get().GetParB("Add_ICARUS_QELike");
+  if( Fill_ICARUS_QELike_Variable ){
+    NUIS_LOG(SAM, " Generic Flux Adding ICARUS QELike variables");
     this->AddICARUS1muNp0piVariablesToTree();
     this->AddICARUS1mu2p0piVariablesToTree();
+  }
+
+  Fill_ICARUS_1mu1pi0_Variable = Config::Get().GetParB("Add_ICARUS_pi0");
+  if(Fill_ICARUS_1mu1pi0_Variable){
+    this->AddICARUS1mu1pi0VariablesToTree();
   }
 
 }
@@ -358,7 +363,6 @@ void GenericFlux_Tester::FillICARUS1muNp0piVariablesToTree(FitEvent *event) {
   }
 
 }
-//-------------------------------------------
 
 //-------------------------------------------
 // ICARUS, 1mu2p0pi
@@ -466,6 +470,101 @@ void GenericFlux_Tester::FillICARUS1mu2p0piVariablesToTree(FitEvent *event) {
 }
 
 //-------------------------------------------
+// ICARUS, 1mu1pi0
+
+void GenericFlux_Tester::AddICARUS1mu1pi0VariablesToTree() {
+  if (!eventVariables) {
+    Config::Get().out->cd();
+    eventVariables = new TTree((this->fName + "_VARS").c_str(),
+                               (this->fName + "_VARS").c_str());
+  }
+
+  NUIS_LOG(SAM, "Adding ICARUS 1mu1pi0 variables");
+
+  eventVariables->Branch("ICARUS_1mu1pi0_IsSignal", &ICARUS_1mu1pi0_IsSignal, "ICARUS_1mu1pi0_IsSignal/O");
+  eventVariables->Branch("ICARUS_1mu1pi0_MuonP", &ICARUS_1mu1pi0_MuonP, "ICARUS_1mu1pi0_MuonP/F");
+  eventVariables->Branch("ICARUS_1mu1pi0_NeutralPionP", &ICARUS_1mu1pi0_NeutralPionP, "ICARUS_1mu1pi0_NeutralPionP/F");
+
+}
+
+void GenericFlux_Tester::FillICARUS1mu1pi0VariablesToTree(FitEvent *event) {
+
+  // Start Particle Loop
+  UInt_t npart = event->Npart();
+
+  bool PassMuonReq{false};
+
+  int nPi0{0};
+  unsigned int Pi0Index;
+
+  int nPipmAboveThrs{0};
+
+
+  for (UInt_t i = 0; i < npart; i++) {
+    // Skip particles that weren't in the final state
+    bool part_alive = event->PartInfo(i)->fIsAlive and
+                      event->PartInfo(i)->Status() == kFinalState;
+    if (!part_alive)
+      continue;
+
+    // PDG Particle
+    int pdgc = event->PartInfo(i)->fPID;
+    TLorentzVector part_4mom = event->PartInfo(i)->fP;
+    double part_momentum = part_4mom.Vect().Mag()/1000.; // GeV
+    double part_energy = part_4mom.E()/1000.; // GeV
+
+    // muon
+    if( abs(pdgc) == 13 ){
+      if( part_energy > 0.143425 ) PassMuonReq = true;
+    }
+    // neutral pion
+    if( abs(pdgc) == 111 ){
+      nPi0++;
+      Pi0Index = i;
+    }
+    // charged pion
+    if( abs(pdgc) == 211 ){
+      if( part_energy>0.025 ) nPipmAboveThrs++;
+    }
+
+/*
+    // CHECK A SIMILAR DEFINITION AS MINERVA FOR EXTRA REJECTION OF UNWANTED THINGS IN SIGNAL DEFN.
+    // MINERvA style
+    if ( abs(pdgc) == 22 && part_4mom.E()/1000. > 0.01 ) nPhoton_1muNp0pi+=1;
+    else if ( abs(pdgc) == 211 || abs(pdgc) == 321 || abs(pdgc) == 323 ||
+              pdgc == 111 || pdgc == 130 || pdgc == 310 || pdgc == 311 ||
+              pdgc == 313 || abs(pdgc) == 221 || abs(pdgc) == 331 ) nMesons_1muNp0pi+=1;
+    else if ( pdgc == 3112 || pdgc == 3122 || pdgc == 3212 || pdgc == 3222 ||
+              pdgc == 4112 || pdgc == 4122 || pdgc == 4212 || pdgc == 4222 ||
+              pdgc == 411 || pdgc == 421 || pdgc == 111 ) nBaryonsAndPi0_1muNp0pi+=1;
+*/
+
+
+  }
+
+  ICARUS_1mu1pi0_IsSignal = PassMuonReq &&
+                            (nPipmAboveThrs==0) &&
+                            (nPi0==1);
+
+  // Init
+  ICARUS_1mu1pi0_MuonP = -999.;
+  ICARUS_1mu1pi0_NeutralPionP = -999.;
+
+  if(!ICARUS_1mu1pi0_IsSignal) return;
+
+  bool IsAntiNu = event->GetNeutrinoIn()->fPID<0;
+  if(! event->GetHMFSParticle(IsAntiNu ? -13 : +13) ) return;
+  if(! event->GetNeutrinoIn() ) return;
+
+  TLorentzVector Pmu = event->GetHMFSParticle(IsAntiNu ? -13 : +13)->fP;
+  //TLorentzVector Pnu = event->GetNeutrinoIn()->fP;
+  TLorentzVector Ppi0 = event->PartInfo(Pi0Index)->fP;
+
+  ICARUS_1mu1pi0_MuonP = Pmu.Vect().Mag()/1000.;
+  ICARUS_1mu1pi0_NeutralPionP = Ppi0.Vect().Mag()/1000.;
+
+}
+
 
 
 //********************************************************************
@@ -734,9 +833,13 @@ void GenericFlux_Tester::FillEventVariables(FitEvent *event) {
   if (Nprotons > 0 && Nneutrons > 0)
     CosPprotPneut = cos(pprot->Vect().Angle(pneut->Vect()));
 
-  if(FillICARUS1muNp0piVariable){
+  if(Fill_ICARUS_QELike_Variable){
     FillICARUS1muNp0piVariablesToTree(event);
     FillICARUS1mu2p0piVariablesToTree(event);
+  }
+
+  if(Fill_ICARUS_1mu1pi0_Variable){
+    FillICARUS1mu1pi0VariablesToTree(event);
   }
 
   // Event Weights ----

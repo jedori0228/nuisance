@@ -72,6 +72,9 @@ public:
   void AddICARUS1mu2p0piVariablesToTree();
   void FillICARUS1mu2p0piVariablesToTree(FitEvent *event);
 
+  void AddICARUS1mu1pi0VariablesToTree();
+  void FillICARUS1mu1pi0VariablesToTree(FitEvent *event);
+
  private:
 
   // Lighter flat trees that don't include vectors
@@ -207,13 +210,15 @@ public:
   bool flagNC1pi0;
 
   // ICARUS 1muNp0pi variables
-  bool FillICARUS1muNp0piVariable;
+  bool Fill_ICARUS_QELike_Variable;
+  // - Tree variables
+  // 1) 1muNp0pi
   bool ICARUS_1muNp0pi_IsSignal;
   float ICARUS_1muNp0pi_deltaPT;
   float ICARUS_1muNp0pi_deltaalphaT;
   float ICARUS_1muNp0pi_MuonCos;
   float ICARUS_1muNp0pi_MuonProtonCos;
-
+  // 2) 1mu(N<1)p0pi
   bool ICARUS_1mu2p0pi_IsSignal;
   float ICARUS_1mu2p0pi_HadronicOpeningAngle;
   float ICARUS_1mu2p0pi_MuonHadronAngle;
@@ -221,6 +226,14 @@ public:
   float ICARUS_1mu2p0pi_DeltaAlphaT;
   float ICARUS_1mu2p0pi_DeltaPhiT;
   float ICARUS_1mu2p0pi_DeltaPTT;
+  
+  // ICARUS 1mu1pi0
+  bool Fill_ICARUS_1mu1pi0_Variable;
+  // - Tree variables
+  // 1) Lane's
+  bool ICARUS_1mu1pi0_IsSignal;
+  float ICARUS_1mu1pi0_MuonP;
+  float ICARUS_1mu1pi0_NeutralPionP;
 
 };
 
