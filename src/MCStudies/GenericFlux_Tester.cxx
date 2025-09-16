@@ -512,10 +512,12 @@ void GenericFlux_Tester::FillICARUS1mu1pi0VariablesToTree(FitEvent *event) {
     TLorentzVector part_4mom = event->PartInfo(i)->fP;
     double part_momentum = part_4mom.Vect().Mag()/1000.; // GeV
     double part_energy = part_4mom.E()/1000.; // GeV
+    double part_mass = part_4mom.M()/1000.; // GeV
+    double part_ke = part_energy - part_mass; // GeV 
 
     // muon
     if( abs(pdgc) == 13 ){
-      if( part_energy > 0.143425 ) PassMuonReq = true;
+      if( part_ke > 0.143425 ) PassMuonReq = true;
     }
     // neutral pion
     if( abs(pdgc) == 111 ){
@@ -524,7 +526,7 @@ void GenericFlux_Tester::FillICARUS1mu1pi0VariablesToTree(FitEvent *event) {
     }
     // charged pion
     if( abs(pdgc) == 211 ){
-      if( part_energy>0.025 ) nPipmAboveThrs++;
+      if( part_ke>0.025 ) nPipmAboveThrs++;
     }
 
 /*
