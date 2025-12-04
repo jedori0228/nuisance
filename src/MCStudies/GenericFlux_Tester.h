@@ -218,6 +218,7 @@ public:
   float ICARUS_1muNp0pi_deltaalphaT;
   float ICARUS_1muNp0pi_MuonCos;
   float ICARUS_1muNp0pi_MuonProtonCos;
+  float ICARUS_1muNp0pi_ProtonP;
   // 2) 1mu(N<1)p0pi
   bool ICARUS_1mu2p0pi_IsSignal;
   float ICARUS_1mu2p0pi_HadronicOpeningAngle;

@@ -266,6 +266,7 @@ void GenericFlux_Tester::AddICARUS1muNp0piVariablesToTree() {
   eventVariables->Branch("ICARUS_1muNp0pi_deltaalphaT", &ICARUS_1muNp0pi_deltaalphaT, "ICARUS_1muNp0pi_deltaalphaT/F");
   eventVariables->Branch("ICARUS_1muNp0pi_MuonCos", &ICARUS_1muNp0pi_MuonCos, "ICARUS_1muNp0pi_MuonCos/F");
   eventVariables->Branch("ICARUS_1muNp0pi_MuonProtonCos", &ICARUS_1muNp0pi_MuonProtonCos, "ICARUS_1muNp0pi_MuonProtonCos/F");
+  eventVariables->Branch("ICARUS_1muNp0pi_ProtonP", &ICARUS_1muNp0pi_ProtonP, "ICARUS_1muNp0pi_ProtonP/F");
 
 }
 
@@ -345,6 +346,7 @@ void GenericFlux_Tester::FillICARUS1muNp0piVariablesToTree(FitEvent *event) {
   ICARUS_1muNp0pi_deltaalphaT = -999.;
   ICARUS_1muNp0pi_MuonCos = -999.;
   ICARUS_1muNp0pi_MuonProtonCos = -999.;
+  ICARUS_1muNp0pi_ProtonP = -999.;
 
   if(protons.size()>0){
 
@@ -359,6 +361,7 @@ void GenericFlux_Tester::FillICARUS1muNp0piVariablesToTree(FitEvent *event) {
 
     ICARUS_1muNp0pi_MuonCos = cos( Pmu.Vect().Angle( Pnu.Vect() ) );
     ICARUS_1muNp0pi_MuonProtonCos = cos( Pmu.Vect().Angle( protons[0]->fP.Vect() ) );
+    ICARUS_1muNp0pi_ProtonP = protons[0]->fP.Vect().Mag()/1000.;;
 
   }
 
