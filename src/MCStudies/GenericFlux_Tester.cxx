@@ -104,6 +104,12 @@ GenericFlux_Tester::GenericFlux_Tester(std::string name, std::string inputfile,
     this->AddICARUS1mu2p0piVariablesToTree();
   }
 
+  Fill_SBND_QELike_Variable = Config::Get().GetParB("Add_SBND_QELike");
+  if( Fill_SBND_QELike_Variable ){
+    NUIS_LOG(SAM, " Generic Flux Adding SBND QELike variables");
+    this->AddSBND1mu1p0piVariablesToTree();
+  }
+
   Fill_ICARUS_1mu1pi0_Variable = Config::Get().GetParB("Add_ICARUS_pi0");
   if(Fill_ICARUS_1mu1pi0_Variable){
     this->AddICARUS1mu1pi0VariablesToTree();
@@ -470,6 +476,108 @@ void GenericFlux_Tester::FillICARUS1mu2p0piVariablesToTree(FitEvent *event) {
     double pTTP2 = pP2.Dot(dirTT);
     ICARUS_1mu2p0pi_DeltaPTT = (pTTP1 + pTTP2)/1000.;
   }
+}
+
+//-------------------------------------------
+// SBND, 1mu1p0pi
+void GenericFlux_Tester::AddSBND1mu1p0piVariablesToTree(){
+
+  if (!eventVariables) {
+    Config::Get().out->cd();
+    eventVariables = new TTree((this->fName + "_VARS").c_str(),
+                               (this->fName + "_VARS").c_str());
+  }
+
+  NUIS_LOG(SAM, "Adding SBND 1mu1p0pi variables");
+
+  eventVariables->Branch("SBND_1mu1p0pi_IsSignal", &SBND_1mu1p0pi_IsSignal, "SBND_1mu1p0pi_IsSignal/O");
+  eventVariables->Branch("SBND_1mu1p0pi_deltaPT", &SBND_1mu1p0pi_deltaPT, "SBND_1mu1p0pi_deltaPT/F");
+  eventVariables->Branch("SBND_1mu1p0pi_deltaalphaT", &SBND_1mu1p0pi_deltaalphaT, "SBND_1mu1p0pi_deltaalphaT/F");
+  eventVariables->Branch("SBND_1mu1p0pi_MuonCos", &SBND_1mu1p0pi_MuonCos, "SBND_1mu1p0pi_MuonCos/F");
+  eventVariables->Branch("SBND_1mu1p0pi_MuonProtonCos", &SBND_1mu1p0pi_MuonProtonCos, "SBND_1mu1p0pi_MuonProtonCos/F");
+
+}
+
+void GenericFlux_Tester::FillSBND1mu1p0piVariablesToTree(FitEvent *event) {
+
+/*
+- one muon with KE > 27 MeV, energy < 1.2 GeV
+- no p+- with KE 30 MeV
+- one proton with KE > 50 MeV
+- no pi0
+*/
+
+// (df.nmu_27MeV == 1) & (df.npi_30MeV == 0) & (df.np_50MeV == 1) & (df.npi0 == 0) & (df.mu.genE < 1.2) 
+
+  unsigned int nmu_27MeV(0), npi_30MeV(0), np_50MeV(0), npi0(0);
+
+  UInt_t idx_proton(0);
+
+  // Start Particle Loop
+  UInt_t npart = event->Npart();
+  for (UInt_t i = 0; i < npart; i++) {
+    // Skip particles that weren't in the final state
+    bool part_alive = event->PartInfo(i)->fIsAlive and
+                      event->PartInfo(i)->Status() == kFinalState;
+    if (!part_alive)
+      continue;
+
+    // PDG Particle
+    int pdgc = event->PartInfo(i)->fPID;
+    TLorentzVector part_4mom = event->PartInfo(i)->fP;
+
+    double KE = event->PartInfo(i)->KE(); // MeV
+
+    if(abs(pdgc)==13){
+      if(KE>=27.0){
+        nmu_27MeV++;
+      }
+    }
+
+    if(pdgc==2212){
+      if(KE>=50.0){
+        np_50MeV++;
+        idx_proton = i;
+      }
+    }
+
+    if(abs(pdgc)==211){
+      if(KE>=30.0){
+        npi_30MeV++;
+      }
+    }
+
+    if(abs(pdgc)==111){
+      npi0++;
+    }
+
+  }
+
+  if(nmu_27MeV==0){
+    SBND_1mu1p0pi_IsSignal = false;
+    return;
+  }
+  if(np_50MeV==0){
+    SBND_1mu1p0pi_IsSignal = false;
+    return;
+  }
+
+  bool IsAntiNu = event->GetNeutrinoIn()->fPID<0;
+
+  FitParticle *fp_muon = event->GetHMFSParticle(IsAntiNu ? -13 : +13);
+  FitParticle *fp_proton = event->PartInfo(idx_proton);
+  FitParticle *fp_nu = event->GetNeutrinoIn();
+
+  SBND_1mu1p0pi_IsSignal = (nmu_27MeV==1) && (npi_30MeV==0) && (np_50MeV==1) && (npi0==0) && (fp_muon->E() < 1200);
+
+  if(! fp_muon ) return;
+  if(! event->GetNeutrinoIn() ) return;
+
+  SBND_1mu1p0pi_deltaPT = FitUtils::CalcTKI_deltaPT(fp_muon->fP.Vect(), fp_proton->fP.Vect(), fp_nu->fP.Vect())/1000.;
+  SBND_1mu1p0pi_deltaalphaT = FitUtils::CalcTKI_deltaalphaT(fp_muon->fP.Vect(), fp_proton->fP.Vect(), fp_nu->fP.Vect());
+  SBND_1mu1p0pi_MuonCos = cos( fp_muon->fP.Vect().Angle( fp_nu->fP.Vect() ) );
+  SBND_1mu1p0pi_MuonProtonCos = cos( fp_muon->fP.Vect().Angle( fp_proton->fP.Vect() ) );
+
 }
 
 //-------------------------------------------
@@ -841,6 +949,10 @@ void GenericFlux_Tester::FillEventVariables(FitEvent *event) {
   if(Fill_ICARUS_QELike_Variable){
     FillICARUS1muNp0piVariablesToTree(event);
     FillICARUS1mu2p0piVariablesToTree(event);
+  }
+
+  if(Fill_SBND_QELike_Variable){
+    FillSBND1mu1p0piVariablesToTree(event);
   }
 
   if(Fill_ICARUS_1mu1pi0_Variable){

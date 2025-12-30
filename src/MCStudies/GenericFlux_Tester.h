@@ -72,6 +72,9 @@ public:
   void AddICARUS1mu2p0piVariablesToTree();
   void FillICARUS1mu2p0piVariablesToTree(FitEvent *event);
 
+  void AddSBND1mu1p0piVariablesToTree();
+  void FillSBND1mu1p0piVariablesToTree(FitEvent *event);
+
   void AddICARUS1mu1pi0VariablesToTree();
   void FillICARUS1mu1pi0VariablesToTree(FitEvent *event);
 
@@ -227,6 +230,16 @@ public:
   float ICARUS_1mu2p0pi_DeltaAlphaT;
   float ICARUS_1mu2p0pi_DeltaPhiT;
   float ICARUS_1mu2p0pi_DeltaPTT;
+
+  // SBND 1mu1p0pi
+  bool Fill_SBND_QELike_Variable;
+  // - Tree varaibles
+  // 1) 1mu1p0pi
+  bool SBND_1mu1p0pi_IsSignal;
+  float SBND_1mu1p0pi_deltaPT;
+  float SBND_1mu1p0pi_deltaalphaT;
+  float SBND_1mu1p0pi_MuonCos;
+  float SBND_1mu1p0pi_MuonProtonCos;
   
   // ICARUS 1mu1pi0
   bool Fill_ICARUS_1mu1pi0_Variable;
