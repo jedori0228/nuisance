@@ -152,7 +152,7 @@ NEUTInputHandler::NEUTInputHandler(std::string const &handle,
   fNeutVect = NULL;
   fNEUTTree->SetBranchAddress("vectorbranch", &fNeutVect);
 #if defined(ROOT_VERSION_MAJOR) && (ROOT_VERSION_MAJOR >= 6) &&                \
-    defined(NEUT_VERSION) && (NEUT_VERSION >= 541)
+    defined(NEUT_SINGLE_VERSION) && (NEUT_SINGLE_VERSION >= 541)
   fNEUTTree->SetAutoDelete(true);
 #endif
   fNEUTTree->GetEntry(0);
@@ -443,7 +443,7 @@ void NEUTUtils::FillNeutCommons(NeutVect *nvect) {
   nework_.modene = nvect->Mode;
   nework_.numne = nvect->Npart();
 
-#if (NEUT_VERSION == 542)
+#if (NEUT_SINGLE_VERSION == 542)
   nemdls_.mdlqeaf = nvect->QEAVForm;
 #else
   nemdls_.mdlqeaf = nvect->QEVForm;

@@ -3,7 +3,7 @@
 #include "WeightUtils.h"
 
 // Dials removed in NEUT 5.4.1
-#if NEUT_VERSION < 541
+#if NEUT_SINGLE_VERSION < 541
 #include "NReWeightCasc.h"
 #include "NReWeightNuXSecCCRES.h"
 #include "NReWeightNuXSecCOH.h"
@@ -14,7 +14,7 @@
 #include "NReWeightNuclPiless.h"
 #endif
 
-#if NEUT_VERSION >= 541
+#if NEUT_SINGLE_VERSION >= 541
 #include "CommonBlockIFace.h"
 #endif
 
@@ -35,7 +35,7 @@
 
 NEUTWeightEngine::NEUTWeightEngine(std::string name) {
 
-#if NEUT_VERSION >= 541
+#if NEUT_SINGLE_VERSION >= 541
   std::string neut_card = FitPar::Config().GetParS("NEUT_CARD");
   if (!neut_card.size()) {
     NUIS_ABORT(
@@ -69,7 +69,7 @@ NEUTWeightEngine::NEUTWeightEngine(std::string name) {
     fNeutRW->AdoptWghtCalc("xsec_res", new neut::rew::NReWeightNuXSecRES);
 
     // Dials removed in NEUT 5.4.1
-#if NEUT_VERSION < 541
+#if NEUT_SINGLE_VERSION < 541
   bool xsec_ccres = rw_engine_list.find("xsec_ccres") == std::string::npos;
   bool xsec_coh = rw_engine_list.find("xsec_coh") == std::string::npos;
   bool xsec_dis = rw_engine_list.find("xsec_dis") == std::string::npos;
@@ -123,7 +123,7 @@ void NEUTWeightEngine::IncludeDial(std::string name, double startval) {
     std::string singlename = allnames[i];
 
     // Get Syst
-#if NEUT_VERSION < 541
+#if NEUT_SINGLE_VERSION < 541
     neut::rew::NSyst_t gensyst = NSyst::FromString(singlename);
 #else
     neut::rew::NSyst_t gensyst = neut::rew::NSyst::FromString(singlename);
@@ -140,7 +140,7 @@ void NEUTWeightEngine::IncludeDial(std::string name, double startval) {
 
     // If Absolute
     if (fIsAbsTwk) {
-#if NEUT_VERSION < 541
+#if NEUT_SINGLE_VERSION < 541
       NSystUncertainty::Instance()->SetUncertainty(fNEUTSysts[index], 1.0, 1.0);
 #else
       neut::rew::NSystUncertainty::Instance()->SetUncertainty(fNEUTSysts[index],

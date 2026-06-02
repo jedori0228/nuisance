@@ -126,7 +126,7 @@ if (NEUT_ENABLED)
       cmessage(FATAL_ERROR "NEUT was explicitly enabled but cannot be found.")
     endif()
     SET(NEUT_ENABLED FALSE)
-  else()
+  else() # NEUT_FOUND
     SET(NEUT_ENABLED TRUE)
 
     if(NOT TARGET NEUT::All)
@@ -140,6 +140,14 @@ if (NEUT_ENABLED)
 
     SET(NUISANCENEUT_COMPILE_OPTIONS)
     LIST(APPEND NUISANCENEUT_COMPILE_OPTIONS -DNEUT_ENABLED=1)
+
+    if(NOT DEFINED NEUT_VERSION OR "${NEUT_VERSION}x" STREQUAL "x")
+      cmessage(FATAL_ERROR "Compiling against NEUT but NEUT_VERSION is not set. If you have to, you can set it on the CMake command line like -DNEUT_VERSION=5.8.0")
+    endif()
+
+    #if NEUT version has dots in it, like modern NEUT versions do, remove them
+    STRING(REPLACE "." "" NEUT_SINGLE_VERSION "${NEUT_VERSION}")
+    LIST(APPEND NUISANCENEUT_COMPILE_OPTIONS -DNEUT_SINGLE_VERSION=${NEUT_SINGLE_VERSION})
 
     if(NEUT_VERSION VERSION_LESS 6.0.0)
       LIST(APPEND NUISANCENEUT_COMPILE_OPTIONS -DNEUT_LEGACY_API_ENABLED)
