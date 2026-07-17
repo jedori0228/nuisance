@@ -61,6 +61,9 @@ class nusystematicsWeightEngine : public WeightEngineBase {
   void Print();
 
   bool fUseCV;
+
+  bool fUseFQName{false};
+
 };
 
 #endif

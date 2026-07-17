@@ -46,6 +46,12 @@ void nusystematicsWeightEngine::Config() {
   std::string fhicl_name = DuneRwtParam.front().GetS("ConfigFHiCL");
 
   DUNErwt.LoadConfiguration(fhicl_name);
+
+  if( DuneRwtParam.front().Has("UseFQName") ){
+    fUseFQName = DuneRwtParam.front().GetB("UseFQName");
+    NUIS_LOG(FIT, "Using fully-qualified name for the parameter name");
+  }
+
 }
 
 systtools::paramId_t const kNuSystCVResponse = 999;
@@ -54,13 +60,46 @@ int nusystematicsWeightEngine::ConvDial(std::string name) {
   if (name == "NuSystCVResponse") {
     return kNuSystCVResponse;
   }
-  if (!DUNErwt.HaveHeader(name)) {
-    NUIS_ABORT("nusystematicsWeightEngine passed dial: "
-               << name << " that it does not understand.");
+
+  if(fUseFQName){
+
+    bool ParamFound = false;
+    for (systtools::paramId_t pid : DUNErwt.GetParameters()) {
+      systtools::SystParamHeader const &hdr = DUNErwt.GetHeader(pid);
+      if (hdr.isResponselessParam) {
+        continue;
+      }
+      int matched_idx_sp = -1;
+      for(int idx_sp=0; idx_sp<DUNErwt.GetSystProvider().size(); idx_sp++){
+        if(DUNErwt.GetSystProvider()[idx_sp]->ParamIsHandled(pid)){
+          matched_idx_sp = idx_sp;
+        }
+      }
+      if(matched_idx_sp<0){
+        NUIS_ABORT("IGENIESystProvider_tool not found from pid :" << int(pid));
+      }
+      std::string this_full_name = DUNErwt.GetSystProvider()[matched_idx_sp]->GetFullyQualifiedName()+"_"+hdr.prettyName;
+      if(this_full_name==name){
+        return int(pid);
+      }
+    }
+    if(!ParamFound){
+      NUIS_ABORT("nusystematicsWeightEngine passed dial: "
+                 << name << " that it does not understand.");
+    }
+
   }
-  NUIS_LOG(FIT, "Added NuSyst param, "
-                    << name << " with ID: " << DUNErwt.GetHeaderId(name));
-  return DUNErwt.GetHeaderId(name);
+  else{
+
+    if (!DUNErwt.HaveHeader(name)) {
+      NUIS_ABORT("nusystematicsWeightEngine passed dial: "
+                 << name << " that it does not understand.");
+    }
+    NUIS_LOG(FIT, "Added NuSyst param, "
+                      << name << " with ID: " << DUNErwt.GetHeaderId(name));
+    return DUNErwt.GetHeaderId(name);
+
+  }
 }
 
 void nusystematicsWeightEngine::IncludeDial(std::string name, double startval) {
